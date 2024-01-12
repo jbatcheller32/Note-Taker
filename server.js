@@ -3,8 +3,9 @@ const path = require('path');
 const fs = require('fs');
 const uuid = require('./public/helpers/uuid')
 const notes = require('./db/db.json');
+const { prototype } = require('module');
 const app = express();
-const port = 3001;
+const PORT = process.env.PORT || 3001;
 
 //middleware for static assets 
 app.use(express.json());
@@ -55,29 +56,31 @@ app.post('/api/notes', (req, res) => {
 
 
                 // write the updated notes from the front end
+                fs.writeFile('./db/db.json', JSON.stringify(parsedNotes, null, 4), (writeError) => {
+                    if (writeError) {
+                        console.error(writeError);
+                        res.status(500).json('Error in updating notes');
+                    } else {
+                        console.info('Successfully updated notes');
 
-                fs.writeFile('./db/db.json', JSON.stringify(parsedNotes, null, 4), (writeError) =>
-                    writeError
-                        ? console.error(writeError)
-                        : console.info('Successfully updated notes')
-                );
+                        // Update the 'notes' variable with the latest data
+                        notes.push(savedNotes);
+
+                        const finalNote = {
+                            status: 'Success!',
+                            body: savedNotes,
+                        };
+                        console.log(finalNote);
+                        res.status(201).json(finalNote);
+                    }
+                });
             }
         });
-
-
-        const finalNote = {
-            status: 'Success!',
-            body: savedNotes,
-        }
-        console.log(finalNote);
-        res.status(201).json(finalNote);
-
     } else {
         res.status(500).json('Error in adding note');
     }
-
 });
-
+                
 
 
 
@@ -90,7 +93,9 @@ app.get('*', (req, res) => {
 
 // server spin up 
 
-app.listen(port, () => {
-    console.log(`App listening on http://localhost:${port}`);
+
+
+app.listen(PORT, () => {
+    console.log(`App listening on http://localhost:${PORT}`);
 });
 
